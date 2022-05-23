@@ -56,15 +56,26 @@ finally:
     server_socket.close()
     
     
- """Test Cases
- ./project5.py --status --headers --port=21315 http://34.138.89.135/ # uses project 5 file
+
  
+""" 
+ Case 1:
+
+./project5.py --status --headers --port=21315 http://34.138.89.135/
+
+Request message: 'GET /?type=Oreo&brand=Nabisco HTTP/1.1\r\nHost: 34.138.89.135\r\nConnection: close\r\n\r\n'
+Response message: 'HTTP/1.1 200 OK\r\nDate: Mon, 18 Oct 2021 22:19:40 UTC\r\nContent-Length: 58\r\nConnection: close\r\nContent-Type: text/html; charset=UTF-8\r\n\r\nGET / HTTP/1.1\r\nHost: 34.138.89.135\r\nConnection: close\r\n\r\n'
+Case 2:
+
 ./project5.py --status --headers --data='{"q": "internet protocols"}' --port=21315 http://34.138.89.135/
 
+Request message: 'GET /?q=internet+protocols HTTP/1.1\r\nHost: 34.138.89.135\r\nConnection: close\r\n\r\n'
+Response message: 'HTTP/1.1 200 OK\r\nDate: Mon, 18 Oct 2021 23:11:26 UTC\r\nContent-Length: 79\r\nConnection: close\r\nContent-Type: text/html; charset=UTF-8\r\n\r\nGET /?q=internet+protocols HTTP/1.1\r\nHost: 34.138.89.135\r\nConnection: close\r\n\r\n'
+Case 3:
 
 ./project5.py --status --headers --cookies='{"type": "Oreo", "brand": "Nabisco"}' --port=21315 http://34.138.89.135/
+
+Request message: 'GET / HTTP/1.1\r\nHost: 34.138.89.135\r\nCookie: type=Oreo; brand=Nabisco\r\nConnection: close\r\n\r\n'
+Response message: 'HTTP/1.1 200 OK\r\nDate: Mon, 18 Oct 2021 23:16:39 UTC\r\nContent-Length: 92\r\nConnection: close\r\nContent-Type: text/html; charset=UTF-8\r\n\r\nGET / HTTP/1.1\r\nHost: 34.138.89.135\r\nCookie: type=Oreo; brand=Nabisco\r\nConnection: close\r\n\r\n'
 """
- 
- 
- 
  
