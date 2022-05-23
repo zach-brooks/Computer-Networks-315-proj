@@ -1,0 +1,86 @@
+#!/usr/bin/env python3
+"""
+Make a GET request for a specified URL and display the message body that is in the response.
+
+Optional switches:
+  --status   display the status in the response
+  --headers  display headers in the response
+  --port=N   request using port number N [default 80]
+
+NOTE: This is a significant enhancement of Project 02 code.
+"""
+
+import argparse
+import urllib.request
+import urllib.parse
+
+
+def main():
+    """
+    Request a resource from a server based on command line argument values
+    and print the information specified
+    Returns:
+        None
+    """
+    # Process the command line to get the URL, port number, and options
+    parser = argparse.ArgumentParser()
+    parser.add_argument("url", help="The URL of the page to fetch")
+    parser.add_argument('-p', '--port', help='port number, default 80', type=int, default=80)
+    parser.add_argument( '--headers', action='store_true', help='print headers')
+    parser.add_argument('-s', '--status', action='store_true', help='print status')
+    args = parser.parse_args()
+
+    # Set up some variables for the args
+    url = args.url
+    port = args.port
+    show_headers = args.headers
+    show_status = args.status
+
+    # Split the URL into its component parts and then put the port number in it
+    url_parts = urllib.parse.urlsplit(url)
+    url_with_port = urllib.parse.urlunsplit((url_parts.scheme, f'{url_parts.hostname}:{port}', url_parts.path,
+                                             url_parts.query, url_parts.fragment))
+
+    print(f'URL: {url_with_port}')
+
+    try:
+        # Request the resource
+        with urllib.request.urlopen(url_with_port) as response:
+            if show_status:
+                print('\nSTATUS:', response.status)
+            if show_headers:
+                print('\nHEADERS:')
+                print('\n'.join(header + ': ' + value for header, value in response.getheaders()))
+
+            content_header = response.getheader('Content-Type')
+            if content_header is None or content_header.startswith('text/'):
+                # Print text in the body
+                body = response.read().decode('utf-8')
+                print('\nBODY:')
+                print(repr(body))
+            else:
+                # Content-Type is not text, so print Content-Length
+                print(f"\nBODY: ({response.getheader('Content-Length')} bytes)")
+
+    except urllib.error.HTTPError as error_exception:
+        if show_status:
+            print('\nSTATUS:', error_exception.code)
+        if show_headers:
+            print('\nHEADERS:')
+            print(error_exception.headers)
+
+
+if __name__ == '__main__':
+    main()
+
+
+"""
+TEST RUNS:
+    --status --headers http://wocoders.com/hello.txt                   # 200
+    --status --headers --port=80 http://wocoders.com/hello.txt         # 200
+    --status --headers --port=443 http://wocoders.com/hello.txt        # 400
+    --status --headers --port=443 https://wocoders.com/hello.txt       # 200
+    --status --headers --port=80 http://wocoders.com/foo.html          # 404
+    --status --headers --port=80 http://wocoders.com/img/boss-160.png  # 200, image/png
+    --status --headers --port=80 http://wocoders.com/about.html        # 200
+"""
