@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""
+Make a GET request for a specified URL and display the message body that is in the response.
+
+Optional switches:
+  --status   display the status in the response
+  --headers  display headers in the request and in the response
+  --port=N   request using port number N [default 80]
+
+NOTE: This is a modification of Project 03 code that uses sockets instead
+of urllib.request.urlopen().
+"""
+import argparse
+import urllib.parse
+import math
+import socket
+
+# process command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--status', action="store_true")
+parser.add_argument('--headers', action="store_true")
+parser.add_argument('--port', type=int, default=80)
+
+parser.add_argument('url', metavar='URL')
+
+args = parser.parse_args()
+url = args.url
+port = args.port
+show_status = args.status
+show_headers = args.headers
+url_parts = urllib.parse.urlsplit(url)
+parsed_url = urllib.parse.urlparse(url)
+urllib.parse.urlunsplit(url_parts)
+
+url = urllib.parse.urlunsplit((url_parts.scheme, url_parts.hostname + ':' + \
+                               str(port), url_parts.path, url_parts.query,
+                               url_parts.fragment))
+TEMPLATE = """{method} {url} HTTP/1.1\r
+Host: {host}\r
+Connection: close\r
+\r
+"""
+HTTPREQUEST = TEMPLATE.format(method='GET', url=url_parts.path, host=url_parts.hostname)
+serverName = url_parts.hostname
+serverPort = args.port
+clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+clientSocket.connect((serverName, serverPort))
+clientSocket.send(HTTPREQUEST.encode())
+response = clientSocket.recv(4096)
+start, body = response.split((b'\r\n\r\n'), 1)
+lines = start.decode().split('\r\n')
+status_line = lines[0]
+headers_lines = lines[1:]
+status = status_line.split()
+if show_status and show_headers:
+    print()
+    print("REQUEST MESSAGE:")
+    print(repr(HTTPREQUEST))
+    print()
+if show_status:
+    print("STATUS:", status[1])
+    print()
+if show_headers:
+    print("RESPONSE HEADERS:")
+    print('\n'.join(headers_lines))
+    header_dict = dict(line.split(': ') for line in headers_lines)
+    n = math.ceil(int(header_dict['Content-Length']) - len(body)/4096)
+    for _ in range(n):
+        body += clientSocket.recv(4096)
+    if "text" in header_dict['Content-Type']:
+        print()
+        print("BODY:")
+        print(repr(body.decode()))
+    else:
+        print()
+        print(f'BODY: ({header_dict["Content-Length"]} bytes)')
+else:
+    print()
+    print("BODY:")
+    print(repr(body.decode()))
+clientSocket.close()
+
+# TEST RUNS:
+# Test Case 1: PEP 8 compliance
+# Test Case 2: http://34.138.89.135/
+# Test Case 3: --status --headers http://34.138.89.135/
+# Test Case 4: --status --headers http://34.138.89.135/project4/
+# Test Case 5: --status --headers http://34.138.89.135/
+# Test Case 6: --status --headers http://34.138.89.135/project4/boss-160.png
+# Test Case 7: --status --headers http://34.138.89.135/project4/hello.txt
+# Test Case 8: --status --headers http://34.138.89.135/apache.txt
+# Test Case 9: --status --headers http://34.138.89.135/project4/winky-icon.png
