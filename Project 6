@@ -1,0 +1,70 @@
+import socket
+import argparse
+import datetime
+
+TEMPLATE = """HTTP/1.1 200 OK\r
+Date: {date}\r
+Content-Length: {content_length}\r
+Connection: close\r
+Content-Type: text/html; charset=UTF-8\r
+\r
+{body}"""
+
+
+
+def command_line_args():
+    """
+      Process the command line arguments
+     Returns:
+        a parser containing the command line argument info
+     """
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--DEBUG', action='store_true', help='print debugging info')
+    return parser.parse_args()
+
+args = command_line_args()
+
+server_port = 21315
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind(('', server_port))
+server_socket.listen(1)
+print('The server is ready to receive')
+try:
+
+    while True:
+
+        connection, address = server_socket.accept()
+        request = connection.recv(4096).decode()
+        if args.DEBUG: print("request:", repr(request))
+
+        date = datetime.datetime.now(datetime.timezone.utc)\
+        .strftime("%a, %d %b %Y %H:%M:%S %Z")
+        content_length = len(request)
+        response = TEMPLATE.format(date=date, content_length=content_length,
+                                    body=request)
+        if args.DEBUG: print(repr(response))
+        connection.send(response.encode())
+        connection.close()
+
+
+except KeyboardInterrupt as e:
+    pass
+except Exception as e:
+    print(e)
+finally:
+    print('\nClosing socket')
+    server_socket.close()
+    
+    
+ """Test Cases
+ ./project5.py --status --headers --port=21315 http://34.138.89.135/ # uses project 5 file
+ 
+./project5.py --status --headers --data='{"q": "internet protocols"}' --port=21315 http://34.138.89.135/
+
+
+./project5.py --status --headers --cookies='{"type": "Oreo", "brand": "Nabisco"}' --port=21315 http://34.138.89.135/
+"""
+ 
+ 
+ 
+ 
