@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+"""
+Make a request (GET or POST) for a specified URL that might involve query/form data and/or cookies.
+
+Optional switches:
+  --status             display the status in the response
+  --headers            display headers in the request and in the response
+  --port=N             request using port number N [default 80]
+  --method=(GET|PUT)   use the specified method [default GET]
+  --data=pairs         JSON description of key-value pairs for query/form data [default={}]
+  --cookies=pairs      JSON description of key-value pairs for cookie data [default={}]
+  --save               save content of type text/html in local file echo.html
+
+NOTE: This is an enhancement of Project 04 code.
+"""
+
+import argparse
+import socket
+import urllib.parse
+import math
+import re
+import json
+
+
+GET_TEMPLATE = """GET {url} HTTP/1.1\r
+Host: {host}\r{cookie_header}
+Connection: close\r
+\r
+"""
+POST_TEMPLATE = """POST {url} HTTP/1.1\r
+Host: {host}\r{cookie_header}
+Connection: close\r
+Content-Type: application/x-www-form-urlencoded\r
+Content-Length: {Content_Length}\r
+\r
+{query}"""
+
+COOKIE_HEADER_TEMPLATE = "\nCookie: {cookie_data}\r"
+# process command line arguments
+parser = argparse.ArgumentParser()
+parser.add_argument('--status', action="store_true")
+parser.add_argument('--DEBUG', action="store_true")
+parser.add_argument('--headers', action="store_true")
+parser.add_argument('--port', type=int, default=80)
+parser.add_argument('--method',
+                    type=lambda s: re.match('(GET|POST)', s.upper())[0],
+                    help="method: either GET or POST",
+                    default='GET')
+parser.add_argument('--save', action='store_true',
+                    help='save response content body')
+parser.add_argument('--data',
+                    help="form data",
+                    default='{}')
+parser.add_argument('--cookies',
+                    help="cookies in json format",
+                    default='{}')
+parser.add_argument('url', metavar='URL')
+
+args = parser.parse_args()
+url = args.url
+port = args.port
+DEBUG = args.DEBUG
+method = args.method
+
+cookies = args.cookies
+cookies_dict = json.loads(cookies)
+cookie_list = []
+
+for k, v in cookies_dict.items():
+    cookie_list.append(urllib.parse.quote(k, encoding='utf-8') + '='
+    + urllib.parse.quote_plus(v, encoding='utf-8'))
+
+cookie_data = '; '.join(cookie_list)
+
+
+if cookies_dict:
+    cookie_header = COOKIE_HEADER_TEMPLATE.format(cookie_data=cookie_data)
+else:
+    cookie_header = ''
+
+show_status = args.status
+show_headers = args.headers
+url_parts = urllib.parse.urlsplit(url)
+
+data = args.data
+data_dict = json.loads(data)
+QUERY_STRING = urllib.parse.urlencode(data_dict)
+
+if data_dict != {}:
+    #urllib.parse. to convert to a get query string
+    QUERY_STRING = urllib.parse.urlencode(data_dict)
+
+    url = url_parts.path + '?' + QUERY_STRING
+else:
+    url = url_parts.path
+
+if args.method == 'GET':
+    HTTPREQUEST = GET_TEMPLATE.format(url=url, host=url_parts.hostname, cookie_header=cookie_header)
+else:
+    HTTPREQUEST = POST_TEMPLATE.format(url=url_parts.path, host=url_parts.hostname,
+    cookie_header=cookie_header, Content_Length=len(QUERY_STRING), query=QUERY_STRING)
+
+
+serverName = url_parts.hostname
+serverPort = args.port
+clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+clientSocket.connect((serverName, serverPort))
+clientSocket.send(HTTPREQUEST.encode())
+response = clientSocket.recv(4096)
+start, body = response.split((b'\r\n\r\n'), 1)
+lines = start.decode().split('\r\n')
+status_line = lines[0]
+headers_lines = lines[1:]
+status = status_line.split()
+if show_status and show_headers:
+    print()
+    print("REQUEST MESSAGE:")
+    print(repr(HTTPREQUEST))
+    print()
+if show_status:
+    print("STATUS:", status[1])
+    print()
+if show_headers:
+    print("RESPONSE HEADERS:")
+    print('\n'.join(headers_lines))
+    header_dict = dict(line.split(': ') for line in headers_lines)
+    n = math.ceil(int(header_dict['Content-Length']) - len(body)/4096)
+    for _ in range(n):
+        body += clientSocket.recv(4096)
+    if "text" in header_dict['Content-Type']:
+        print()
+        print("BODY:")
+        print(repr(body.decode()))
+    
+    else:
+        print()
+        print(f'BODY: ({header_dict["Content-Length"]} bytes)')
+else:
+    print()
+    print("BODY:")
+    print(repr(body.decode()))
+    if args.save and content_type.startswith('text/html'):
+        with open('echo.html', 'w') as content_file:
+            content_file.write(body)
+clientSocket.close()
+
