@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+"""
+Get the text of Request for Comment (RFC) 2616 (HTTP/1.1)
+https://www.rfc-editor.org/rfc/rfc7230.txt
+"""
+import urllib.request
+with urllib.request.urlopen('https://www.rfc-editor.org/rfc/rfc7230.txt') as response:
+    html = response.read().decode()
+    print(html[:4096])
