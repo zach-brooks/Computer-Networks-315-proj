@@ -1,0 +1,78 @@
+import socket
+import argparse
+import datetime
+import os.path
+import traceback
+
+TEMPLATE = """HTTP/1.1 200 OK\r
+Date: {date}\r
+Content-Length: {content_length}\r
+Connection: close\r
+Content-Type: text/html; charset=UTF-8\r
+\r
+{body}"""
+
+TEMPLATE403 = """HTTP/1.1 403 Forbidden\r
+Date: {date}\r
+Connection: close"""
+
+TEMPLATE404 = """HTTP/1.1 404 Not Found"""
+
+def command_line_args():
+    """
+    Process the command line arguments
+    Returns:
+        a parser containing the command line argument info
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-v", "--verbose", action = "count", default = 0, help = "Increase verbosity")
+    parser.add_argument('dir', help='the directory of the example')
+    parser.add_argument('--DEBUG', action='store_true', help='print debugging info')
+    return parser.parse_args()
+
+args = command_line_args()
+
+server_port = 21315
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.bind(('', server_port))
+server_socket.listen(1)
+print('The server is ready to receive')
+try:
+
+    while True:
+
+        connection, address = server_socket.accept()
+        request = connection.recv(4096).decode()
+        if args.DEBUG: print("request:", repr(request))
+        dir = args.dir
+        print("Dir: ", dir)
+        #build a response that echose back the request
+
+        #date = time.strptime(request)
+        #Wed, 20 Oct 2021 16:45:57 UTC
+        
+        
+"""
+Test Cases
+http://34.138.89.135/project4/hello.txt
+
+http://34.138.89.135/project4/hello.txt
+
+--status --headers --method=POST http://34.138.89.135/project4/hello.txt
+
+--status --headers http://34.138.89.135/project4/boss-160.png
+
+--status --headers http://34.138.89.135/test5.php Make sure no data or cookies are actually in the request.
+
+--status --headers --method=GET --data='{"protocol": "http", "version": "1.1", "method": "GET"}' http://34.138.89.135/test5.php
+
+--status --headers --method=POST --data='{"protocol": "http", "version": "1.1", "method": "POST"}' http://34.138.89.135/test5.php
+
+--status --headers --method=GET --data='{"category": "books", "q": "Kurose, J. & Ross, K.", "paginate": "yes"}' --cookies='{"COOKIE1": "snickerdoodle", "COOKIE2": "ginger snap"}' http://34.138.89.135/test5.php
+
+--status --headers --method=POST --data='{"name": "Dewey Hafta", "addr1": "429 N Church St", "addr2": "", "city": "Spartanburg", "state": "SC", "zipcode": "29303-3663"}' --cookies='{"SESSIONID": "ba5eball", "SECRET-CODE": "Y9D"}' http://34.138.89.135/test5.php
+
+"""
+
+
+
